@@ -8,6 +8,7 @@ import json
 
 #Global variable to store the api response
 api_response = []
+filtered_api_response = []
 
 # Initialize the client
 client = instructor.patch(
@@ -17,8 +18,6 @@ client = instructor.patch(
     ),
     mode=instructor.Mode.JSON,
 )
-
-
 
 # Define the schema for the response
 class Functions (BaseModel):
@@ -303,26 +302,32 @@ def api_clear_response():
     api_response.clear()
     
 # Defined function for regular chat
-def chat(question, filtered_api_response):
+def chat(question, api_response):
     stream = client.chat.completions.create(
     model="phi3:instruct",
     temperature=0.5,
     top_p=0.65,
-    max_tokens=100,
     messages=[
-        {"role": "system", "content": "What do you think about apple tree ufaeuhfiuhf"},
+        {"role": "system", "content": f'''
+          You are a gym trainer and you are restricted to talk only about exercises.
+          You will provide the user QUESTION and a array of DATA from database.
+          You have to provide suitable natural language answer in shorter way based on QUESTION and DATA.
+          Your sound should polite and professional.
+         '''},
+        {"role": "user", "content": f"QUESTION: {question} DATA: {api_response}  "},
     ],
     stream=True,
 )
     for chunk in stream:
         print(chunk.choices[0].delta.content, end="")
 
-
 def chain():
     question = input("You: ")
     func_resp_dict  = chat_call(question)
     print(func_resp_dict)
     selector(func_resp_dict)
+    print(api_response)
+    chat(question, api_response)
     
 if __name__ == "__main__":
     chain()
