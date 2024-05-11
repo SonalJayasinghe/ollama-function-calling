@@ -8,7 +8,6 @@ import json
 
 #Global variable to store the api response
 api_response = []
-filtered_api_response = []
 
 # Initialize the client
 client = instructor.patch(
@@ -301,8 +300,19 @@ def selector(json_dict):
 def api_clear_response():
     api_response.clear()
     
+    
+#Filtering the API response
+def filter_api_response(responses):
+    i = 1
+    filtered_api_response = ""
+    for response in responses[0]:
+        filtered_api_response = filtered_api_response + f"{i}. Exercise Name: {response['name']}, Equipment: {response['equipment']}, Target Muscle: {response['target']}\n"
+        i += 1
+    return filtered_api_response
+    
+    
 # Defined function for regular chat
-def chat(question, api_response):
+def chat(question, filtered_responses):
     stream = client.chat.completions.create(
     model="phi3:instruct",
     temperature=0.5,
@@ -314,7 +324,9 @@ def chat(question, api_response):
           You have to provide suitable natural language answer in shorter way based on QUESTION and DATA.
           Your sound should polite and professional.
          '''},
-        {"role": "user", "content": f"QUESTION: {question} DATA: {api_response}  "},
+        {"role": "user", "content": f'''
+         QUESTION: {question}
+         DATA: {filtered_responses}  '''},
     ],
     stream=True,
 )
@@ -326,8 +338,8 @@ def chain():
     func_resp_dict  = chat_call(question)
     print(func_resp_dict)
     selector(func_resp_dict)
-    print(api_response)
-    chat(question, api_response)
+    filtered_responses = filter_api_response(api_response)
+    chat(question, filtered_responses)
     
 if __name__ == "__main__":
     chain()
