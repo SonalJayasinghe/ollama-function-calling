@@ -3,6 +3,8 @@ import instructor
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 from rich import print
+from functions.functions import get_exercise_list, get_exercise_by_bodypart
+import json
 
 
 client = instructor.patch(
@@ -266,13 +268,35 @@ funct_resp = client.chat.completions.create(
             }         
                
          '''},
-        {"role": "user", "content": "show me all the exercises and exercises for chest"},
+        {"role": "user", "content": "what are the exercises for chest"},
     ],
     response_model=Call,
 )    
 
-print(funct_resp.model_dump_json(indent=2))
+json_response = funct_resp.model_dump_json()
+json_dict = json.loads(json_response)
 
+
+api_response = []
+
+if json_dict["moves"] == []:
+    print("Invalid move")
+    
+else:    
+    for move in json_dict["moves"]:
+    
+        if move["name"] == "Get_Exercise_List":
+            print("List of exercises")
+            api_response.append(get_exercise_list())
+            print("---------------")
+        elif move["name"] == "Get_Exercise_By_Bodypart":
+            print(f"List of exercises for {move['parameters'][0]}")
+            api_response.append(get_exercise_by_bodypart(move['parameters'][0]))
+            print("---------------")
+        else:
+            print("Invalid move")
+            
+print(api_response)            
 
 # stream = client.chat.completions.create(
 #     model="phi3:instruct",

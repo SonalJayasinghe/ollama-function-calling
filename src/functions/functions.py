@@ -8,7 +8,7 @@ api_key = os.getenv("RAPID_KEY")
 url = os.getenv("BASE_URL")
 host = os.getenv("RAPID_HOST")
 
-def get_exercises():
+def get_exercise_list():
     querystring = {"limit":"10"}
     headers = {
         "X-RapidAPI-Key": api_key,
@@ -19,7 +19,7 @@ def get_exercises():
 
 
 def get_exercise_by_bodypart(name: str):
-    querystring = {"limit":"10"}
+    querystring = {"limit":"2"}
     headers = {
         "X-RapidAPI-Key": api_key,
         "X-RapidAPI-Host": host
