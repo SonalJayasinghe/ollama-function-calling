@@ -6,7 +6,10 @@ from rich import print
 from functions.functions import get_exercise_list, get_exercise_by_bodypart
 import json
 
+#Global variable to store the api response
+api_response = []
 
+# Initialize the client
 client = instructor.patch(
     OpenAI(
         base_url="http://localhost:11434/v1",
@@ -15,6 +18,9 @@ client = instructor.patch(
     mode=instructor.Mode.JSON,
 )
 
+
+
+# Define the schema for the response
 class Functions (BaseModel):
     name: str = Field(..., description="Name of the function")
     parameters: List[str] = Field( description="List of parameters of the function")
@@ -23,13 +29,15 @@ class Call(BaseModel):
     thought: str = Field(..., description="Thought process behind the response")
     moves: List[Functions] = Field(None, description="List of functions used to get the response")
 
-funct_resp = client.chat.completions.create(
-    model="gemma:2b",
-    temperature=0.5,
-    top_p=0.65,
-    max_tokens=100,
-    messages=[
-        {"role": "system", "content": ''' 
+# Make the request for function call
+def chat_call(question):
+    funct_resp = client.chat.completions.create(
+        model="gemma:2b",
+        temperature=0.5,
+        top_p=0.65,
+        max_tokens=100,
+        messages=[
+            {"role": "system", "content": ''' 
          You are a gym trainer system and you are restricted to talk only about exercises.
          The user will ask about either exercises or exercises based on body parts.
          
@@ -268,45 +276,53 @@ funct_resp = client.chat.completions.create(
             }         
                
          '''},
-        {"role": "user", "content": "what are the exercises for chest"},
+            {"role": "user", "content": f"Question: {question}"},
+        ],
+        response_model=Call,
+    )    
+
+    json_response = funct_resp.model_dump_json()
+    return json.loads(json_response)
+    
+
+
+# Select the correct function to get the response based on the moves
+def selector(json_dict):
+    if json_dict["moves"] == []:
+        api_response.append({"message": "No moves found. Please ask about exercises or exercises based on body parts"})
+    else:    
+        for move in json_dict["moves"]:
+            if move["name"] == "Get_Exercise_List":
+                api_response.append(get_exercise_list())
+            elif move["name"] == "Get_Exercise_By_Bodypart":
+                api_response.append(get_exercise_by_bodypart(move['parameters'][0]))
+            else:
+                print("Assistant: Invalid move")
+
+def api_clear_response():
+    api_response.clear()
+    
+# Defined function for regular chat
+def chat(question, filtered_api_response):
+    stream = client.chat.completions.create(
+    model="phi3:instruct",
+    temperature=0.5,
+    top_p=0.65,
+    max_tokens=100,
+    messages=[
+        {"role": "system", "content": "What do you think about apple tree ufaeuhfiuhf"},
     ],
-    response_model=Call,
-)    
+    stream=True,
+)
+    for chunk in stream:
+        print(chunk.choices[0].delta.content, end="")
 
-json_response = funct_resp.model_dump_json()
-json_dict = json.loads(json_response)
 
-
-api_response = []
-
-if json_dict["moves"] == []:
-    print("Invalid move")
+def chain():
+    question = input("You: ")
+    func_resp_dict  = chat_call(question)
+    print(func_resp_dict)
+    selector(func_resp_dict)
     
-else:    
-    for move in json_dict["moves"]:
-    
-        if move["name"] == "Get_Exercise_List":
-            print("List of exercises")
-            api_response.append(get_exercise_list())
-            print("---------------")
-        elif move["name"] == "Get_Exercise_By_Bodypart":
-            print(f"List of exercises for {move['parameters'][0]}")
-            api_response.append(get_exercise_by_bodypart(move['parameters'][0]))
-            print("---------------")
-        else:
-            print("Invalid move")
-            
-print(api_response)            
-
-# stream = client.chat.completions.create(
-#     model="phi3:instruct",
-#     temperature=0.5,
-#     top_p=0.65,
-#     max_tokens=100,
-#     messages=[
-#         {"role": "system", "content": "What do you think about apple tree ufaeuhfiuhf"},
-#     ],
-#     stream=True,
-# )
-# for chunk in stream:
-#     print(chunk.choices[0].delta.content, end="")
+if __name__ == "__main__":
+    chain()
