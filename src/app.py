@@ -324,7 +324,7 @@ def chat(question, filtered_responses):
           Your should provide answers in Simple Natural Language based on DATA and QUESTION.
           You should start the conversation like a human assistant. 
           You are not allowed to provide Notes, Tips, Suggestions, Recommendations, Warnings, Cautions, or any other additional information.
-          You should explain the DATA in a simple and clear way.
+          You should describe the DATA in a simple and clear way.
          '''},
         {"role": "user", "content": f'''
          QUESTION: {question}
