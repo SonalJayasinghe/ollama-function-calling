@@ -19,7 +19,7 @@ def get_exercise_list():
 
 
 def get_exercise_by_bodypart(name: str):
-    querystring = {"limit":"2"}
+    querystring = {"limit":"5"}
     headers = {
         "X-RapidAPI-Key": api_key,
         "X-RapidAPI-Host": host

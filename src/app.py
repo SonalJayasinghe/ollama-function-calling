@@ -1,13 +1,16 @@
 from openai import OpenAI
+import sys
 import instructor
-from typing import List, Optional, Literal
+from typing import List
 from pydantic import BaseModel, Field
 from rich import print
+from rich.console import Console
 import json
 from functions.functions import get_exercise_by_bodypart, get_exercise_list
 
 
 # Initialize the client
+console = Console()
 client = instructor.patch(
     OpenAI(
         base_url="http://localhost:11434/v1",
@@ -19,16 +22,13 @@ client = instructor.patch(
 def selector(json_dict):
     api_response = []
     
-    if json_dict["moves"] == []:
-        api_response.append([{ 'type': "No Moves", 'message': " The user asked wrong BODY PARTS. Please ask again with correct BODY PARTS. show the list of BODY PARTS."}])
-    else:    
-        for move in json_dict["moves"]:
-            if move["name"] == "Get_Exercise_List":
-                api_response.append([{ 'type': "get all exercises", 'message': get_exercise_list()}])
-            elif move["name"] == "Get_Exercise_By_Bodypart":
-                api_response.append([{ 'type': f"get exercise for {move['parameters'][0]}", 'message': get_exercise_by_bodypart(move['parameters'][0])}])
-            else:
-                api_response.append([{ 'type': "No Moves", 'message': " The user asked wrong BODY PARTS. Please ask again with correct BODY PARTS. show the list of BODY PARTS."}])
+    for move in json_dict["moves"]:
+        if move["name"] == "Get_Exercise_List":
+            api_response.append([{ 'type': "get all exercises", 'message': get_exercise_list()}])
+        elif move["name"] == "Get_Exercise_By_Bodypart":
+            api_response.append([{ 'type': f"get exercise for {move['parameters'][0]}", 'message': get_exercise_by_bodypart(move['parameters'][0])}])
+        else:
+            api_response.append([{ 'type': "No Moves", 'message': { "statusCode" : "400"}}])
     return api_response       
 
 def api_response_to_nl(api_response):
@@ -61,7 +61,6 @@ def chat_call(question):
         model="gemma:2b",
         temperature=0.5,
         top_p=0.65,
-        max_tokens=100,
         messages=[
             {"role": "system", "content": ''' 
          You are a gym trainer system and you are restricted to talk only about exercises.
@@ -87,6 +86,7 @@ def chat_call(question):
          MOVES:
          Get_Exercise_List: Get the list of exercises
          Get_Exercise_By_Bodypart: Get the list of exercises based on body part
+         No_Moves: If the user asks about any other body part, you should ask the user to ask about the body parts in the list.
          
          
          Respond in the following format:
@@ -226,7 +226,7 @@ def chat_call(question):
             user: what are the exercises for stomach
             {
                 "thought": "stomach is not in my BODY PARTS list. I should ask the user to ask about the body parts in the list",
-                "moves": []
+                "moves": [{"name": "No_Moves", "parameters": []}]
             }  
         ----
             user: what are the exercises for stomach and neck
@@ -311,22 +311,20 @@ def chat_call(question):
 
     json_response = funct_resp.model_dump_json()
     return json.loads(json_response)
-
-
-    
     
 # Defined function for regular chat
 def chat(question, filtered_responses):
     stream = client.chat.completions.create(
-    model="phi3:instruct",
+    model="gemma:2b",
     temperature=0.5,
     top_p=0.65,
     messages=[
         {"role": "system", "content": f'''
-          You are a gym trainer and you are restricted to talk only about exercises.You will provide the user QUESTION and DATA that user asked for.
-          Your goal is to provide answers in Simple Natural Language based on DATA and QUESTION.
-          You are not allowed to start conversation like 'Based on you data' , 'Based on your query'
+          You are a gym trainer and you are restricted to talk only about exercises. You will provide the user QUESTION and DATA from a secondary system that helps you to provide btter answers.
+          Your should provide answers in Simple Natural Language based on DATA and QUESTION.
+          You should start the conversation like a human assistant. 
           You are not allowed to provide Notes, Tips, Suggestions, Recommendations, Warnings, Cautions, or any other additional information.
+          You should explain the DATA in a simple and clear way.
          '''},
         {"role": "user", "content": f'''
          QUESTION: {question}
@@ -335,15 +333,22 @@ def chat(question, filtered_responses):
     ],
     stream=True,
 )
+    sys.stdout.write("\033[F")
+    sys.stdout.write("\033[K") 
+    print("\nAssistant: ", end="")
     for chunk in stream:
         print(chunk.choices[0].delta.content, end="")
 
-def chain():
-    question = input("You: ")
-    func_resp_dict  = chat_call(question)
-    api_response = selector(func_resp_dict)
-    api_response_nl = api_response_to_nl(api_response)
-    chat(question, api_response_nl)
-    
-if __name__ == "__main__":
-    chain()
+question = input("You: ")
+console.print("Thinking...", style="bold green")
+func_resp_dict  = chat_call(question)
+sys.stdout.write("\033[F")
+sys.stdout.write("\033[K")
+print(func_resp_dict)
+console.print("APIs are calling...", style="bold green")
+api_response = selector(func_resp_dict)
+api_response_nl = api_response_to_nl(api_response)
+sys.stdout.write("\033[F")
+sys.stdout.write("\033[K")
+console.print("Thinking...", style="bold green")
+chat(question, api_response_nl)
