@@ -8,13 +8,12 @@ from rich.console import Console
 import json
 from functions.functions import get_exercise_by_bodypart, get_exercise_list
 
-
 # Initialize the client
 console = Console()
 client = instructor.patch(
     OpenAI(
         base_url="http://localhost:11434/v1",
-        api_key="ollama"
+        api_key="gemma"
     ),
     mode=instructor.Mode.JSON,
 )
@@ -59,8 +58,7 @@ class Call(BaseModel):
 def chat_call(question):
     funct_resp = client.chat.completions.create(
         model="gemma:2b",
-        temperature=0.5,
-        top_p=0.65,
+        temperature=0.3,
         messages=[
             {"role": "system", "content": ''' 
          You are a gym trainer system and you are restricted to talk only about exercises.
@@ -313,22 +311,18 @@ def chat_call(question):
     return json.loads(json_response)
     
 # Defined function for regular chat
-def chat(question, filtered_responses):
+def chat(question, context):
     stream = client.chat.completions.create(
     model="gemma:2b",
-    temperature=0.5,
-    top_p=0.65,
+    temperature=0.6,
     messages=[
         {"role": "system", "content": f'''
-          You are a gym trainer and you are restricted to talk only about exercises. You will provide the user QUESTION and DATA from a secondary system that helps you to provide btter answers.
-          Your should provide answers in Simple Natural Language based on DATA and QUESTION.
-          You should start the conversation like a human assistant. 
-          You are not allowed to provide Notes, Tips, Suggestions, Recommendations, Warnings, Cautions, or any other additional information.
-          You should describe the DATA in a simple and clear way.
+          You are a gym trainer for MAN GYM Fitness Center, and you are restricted to talk only about exercises. You will provide the user QUESTION and CONTEXT from a secondary system that helps you to provide btter answers.
+          Your should provide a slightly descriptive answers in simple natural language based on CONTEXT and QUESTION.          
          '''},
         {"role": "user", "content": f'''
          QUESTION: {question}
-         DATA: {filtered_responses} 
+         CONTEXT: {context} 
          '''},
     ],
     stream=True,
@@ -339,16 +333,24 @@ def chat(question, filtered_responses):
     for chunk in stream:
         print(chunk.choices[0].delta.content, end="")
 
-question = input("You: ")
-console.print("Thinking...", style="bold green")
-func_resp_dict  = chat_call(question)
-sys.stdout.write("\033[F")
-sys.stdout.write("\033[K")
-print(func_resp_dict)
-console.print("APIs are calling...", style="bold green")
-api_response = selector(func_resp_dict)
-api_response_nl = api_response_to_nl(api_response)
-sys.stdout.write("\033[F")
-sys.stdout.write("\033[K")
-console.print("Thinking...", style="bold green")
-chat(question, api_response_nl)
+
+
+console.print("-------- MAN GYM AND FITNESS CENTER --------", style="bold blue")
+while True:
+    question = input("You: ")
+    if(question == "exit"):
+        console.print("Assistant: Goodbye! See you at Gym :)", style="italic red")
+        break
+    console.print("Thinking...", style="bold green")
+    func_resp_dict  = chat_call(question)
+    sys.stdout.write("\033[F")
+    sys.stdout.write("\033[K")
+    console.print("APIs are calling...", style="bold green")
+    api_response = selector(func_resp_dict)
+    api_response_nl = api_response_to_nl(api_response)
+    print(api_response)
+    sys.stdout.write("\033[F")
+    sys.stdout.write("\033[K")
+    console.print("Thinking...", style="bold green")
+    chat(question, api_response_nl)
+    print("\n")
