@@ -3,11 +3,9 @@ import instructor
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 from rich import print
-from functions.functions import get_exercise_list, get_exercise_by_bodypart
 import json
+from functions.functions import get_exercise_by_bodypart, get_exercise_list
 
-#Global variable to store the api response
-api_response = []
 
 # Initialize the client
 client = instructor.patch(
@@ -17,6 +15,36 @@ client = instructor.patch(
     ),
     mode=instructor.Mode.JSON,
 )
+
+def selector(json_dict):
+    api_response = []
+    
+    if json_dict["moves"] == []:
+        api_response.append([{ 'type': "No Moves", 'message': " The user asked wrong BODY PARTS. Please ask again with correct BODY PARTS. show the list of BODY PARTS."}])
+    else:    
+        for move in json_dict["moves"]:
+            if move["name"] == "Get_Exercise_List":
+                api_response.append([{ 'type': "get all exercises", 'message': get_exercise_list()}])
+            elif move["name"] == "Get_Exercise_By_Bodypart":
+                api_response.append([{ 'type': f"get exercise for {move['parameters'][0]}", 'message': get_exercise_by_bodypart(move['parameters'][0])}])
+            else:
+                api_response.append([{ 'type': "No Moves", 'message': " The user asked wrong BODY PARTS. Please ask again with correct BODY PARTS. show the list of BODY PARTS."}])
+    return api_response       
+
+def api_response_to_nl(api_response):
+    response_text = ""
+    for response in api_response:
+        i = 1
+        response_text += f"-----{response[0]['type']}-----\n"
+        for item in response[0]['message']:
+            if(item == 'statusCode'):
+                response_text += "Sorry!, there is no exercise for requested bodypart. \n"
+                break
+            response_text += f"{i}. Exercise Name: {item['name']}, Body Part: {item['bodyPart']}, Target Mucle: {item['target']}, Secondary Target Mucles: {item['secondaryMuscles']} \n"
+            i += 1
+        response_text += "------------------------------------\n"
+    return response_text
+
 
 # Define the schema for the response
 class Functions (BaseModel):
@@ -50,6 +78,8 @@ def chat_call(question):
          upper arms
          upper legs
          waist
+         
+         BODY PARTS should be one of these. If the user asks about any other body part, you should ask the user to ask about the body parts in the list.
          
          For every request, perform zero or one or more of the following MOVES. 
          The MOVES name is case-sensitive and should be as it is. You are not allowed to use any other arbitrary MOVES.
@@ -281,34 +311,8 @@ def chat_call(question):
 
     json_response = funct_resp.model_dump_json()
     return json.loads(json_response)
-    
 
 
-# Select the correct function to get the response based on the moves
-def selector(json_dict):
-    if json_dict["moves"] == []:
-        api_response.append({"message": "No moves found. Please ask about exercises or exercises based on body parts"})
-    else:    
-        for move in json_dict["moves"]:
-            if move["name"] == "Get_Exercise_List":
-                api_response.append(get_exercise_list())
-            elif move["name"] == "Get_Exercise_By_Bodypart":
-                api_response.append(get_exercise_by_bodypart(move['parameters'][0]))
-            else:
-                print("Assistant: Invalid move")
-
-def api_clear_response():
-    api_response.clear()
-    
-    
-#Filtering the API response
-def filter_api_response(responses):
-    i = 1
-    filtered_api_response = ""
-    for response in responses[0]:
-        filtered_api_response = filtered_api_response + f"{i}. Exercise Name: {response['name']}, Equipment: {response['equipment']}, Target Muscle: {response['target']}\n"
-        i += 1
-    return filtered_api_response
     
     
 # Defined function for regular chat
@@ -319,14 +323,15 @@ def chat(question, filtered_responses):
     top_p=0.65,
     messages=[
         {"role": "system", "content": f'''
-          You are a gym trainer and you are restricted to talk only about exercises.
-          You will provide the user QUESTION and a array of DATA from database.
-          You have to provide suitable natural language answer in shorter way based on QUESTION and DATA.
-          Your sound should polite and professional.
+          You are a gym trainer and you are restricted to talk only about exercises.You will provide the user QUESTION and DATA that user asked for.
+          Your goal is to provide answers in Simple Natural Language based on DATA and QUESTION.
+          You are not allowed to start conversation like 'Based on you data' , 'Based on your query'
+          You are not allowed to provide Notes, Tips, Suggestions, Recommendations, Warnings, Cautions, or any other additional information.
          '''},
         {"role": "user", "content": f'''
          QUESTION: {question}
-         DATA: {filtered_responses}  '''},
+         DATA: {filtered_responses} 
+         '''},
     ],
     stream=True,
 )
@@ -336,10 +341,9 @@ def chat(question, filtered_responses):
 def chain():
     question = input("You: ")
     func_resp_dict  = chat_call(question)
-    print(func_resp_dict)
-    selector(func_resp_dict)
-    filtered_responses = filter_api_response(api_response)
-    chat(question, filtered_responses)
+    api_response = selector(func_resp_dict)
+    api_response_nl = api_response_to_nl(api_response)
+    chat(question, api_response_nl)
     
 if __name__ == "__main__":
     chain()
