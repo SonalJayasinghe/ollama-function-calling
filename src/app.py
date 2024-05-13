@@ -28,7 +28,8 @@ def selector(json_dict):
         if move["name"] == "Get_Exercise_List":
             api_response.append([{ 'type': "get all exercises", 'message': get_exercise_list()}])
         elif move["name"] == "Get_Exercise_By_Bodypart":
-            api_response.append([{ 'type': f"get exercise for {move['parameters'][0]}", 'message': get_exercise_by_bodypart(move['parameters'][0])}])
+            for i in range(len(move['parameters'])):
+             api_response.append([{ 'type': f"get exercise for {move['parameters'][i]}", 'message': get_exercise_by_bodypart(move['parameters'][i])}])
         else:
             api_response.append([{ 'type': "No Moves", 'message': { "statusCode" : "400"}}])
     return api_response       
@@ -61,7 +62,7 @@ class Call(BaseModel):
 def chat_call(question):
     funct_resp = client.chat.completions.create(
         model="gemma:2b",
-        temperature=0.3,
+        temperature=0.1,
         messages=[
             {"role": "system", "content": ''' 
          You are a gym trainer system and you are restricted to talk only about exercises.
@@ -101,7 +102,8 @@ def chat_call(question):
                 ]
          }
          
-         Examples
+         Examples:
+         
          ---
             User: What are the exercises you have?
             {
@@ -113,6 +115,7 @@ def chat_call(question):
                     }
                 ]
             }
+            
         ---
             User: What are the exercises for chest?
             {
@@ -124,6 +127,7 @@ def chat_call(question):
                     }
                 ]
             }
+            
         ----
             user: What are the exercises for back?   
             {
@@ -135,6 +139,7 @@ def chat_call(question):
                     }
                 ]
             }
+            
         ----
             user: What are the exercises for lower arms?
             {
@@ -146,6 +151,37 @@ def chat_call(question):
                     }
                 ]
             }
+            
+        ----
+            user: what are the exercises for neck and cardio?
+            {
+                "thought": "I need to get the list of exercises for neck and cardio",
+                "moves": [
+                    {
+                        "name": "Get_Exercise_By_Bodypart",
+                        "parameters": ["neck", "cardio"]
+                    }
+                ]
+            }
+            
+            
+            
+        ----
+            user: show me all the exercises and then provide me specific exercises for upper legs and shoulders
+            {
+                "thought": "I need to get the list of exercises and then provide specific exercises for upper legs and shoulders",
+                "moves": [
+                    {
+                        "name": "Get_Exercise_List",
+                        "parameters": []
+                    },
+                    {
+                        "name": "Get_Exercise_By_Bodypart",
+                        "parameters": ["upper legs", "shoulders"]
+                    }
+                ]
+            }    
+                
         ----
             user: Show me the all the exercises and exercises for chest
             {
@@ -160,7 +196,8 @@ def chat_call(question):
                         "parameters": ["chest"]
                     }
                 ]
-            }             
+            }   
+                      
          ----
             user: Show me the all the exercises
             {
@@ -172,6 +209,7 @@ def chat_call(question):
                     }
                 ]
             }
+            
         ----
             user: I want to shape my waist
             {
@@ -183,6 +221,7 @@ def chat_call(question):
                     }
                 ]
             }
+            
         ----
             user: I want to build my shoulders
             {
@@ -194,6 +233,7 @@ def chat_call(question):
                     }
                 ]
             }
+            
         ----
             user: I want to build my upper arms
             {
@@ -205,6 +245,7 @@ def chat_call(question):
                     }
                 ]
             }
+            
         ---- 
             user: what are the exercises for lower legs, upper legs and cardio
             {
@@ -212,23 +253,18 @@ def chat_call(question):
                 "moves": [
                     {
                         "name": "Get_Exercise_By_Bodypart",
-                        "parameters": ["lower legs"]
-                    },
-                    {
-                        "name": "Get_Exercise_By_Bodypart",
-                        "parameters": ["upper legs"]
-                    },
-                    {
-                        "name": "Get_Exercise_By_Bodypart",
-                        "parameters": ["cardio"]
+                        "parameters": ["lower legs", "upper legs", "cardio"]
                     }
                 ]
+            }
+            
         ----
             user: what are the exercises for stomach
             {
                 "thought": "stomach is not in my BODY PARTS list. I should ask the user to ask about the body parts in the list",
                 "moves": [{"name": "No_Moves", "parameters": []}]
             }  
+            
         ----
             user: what are the exercises for stomach and neck
             {
@@ -240,6 +276,7 @@ def chat_call(question):
                     }
                 ]
             } 
+            
         ---
             user: I want find all the exercises
             {
@@ -251,6 +288,7 @@ def chat_call(question):
                     }
                 ]
             }
+            
         ----
             user: What are the exercises do you have?
             {
@@ -261,7 +299,8 @@ def chat_call(question):
                         "parameters": []
                     }
                 ]
-            }                   
+            }    
+                           
         ----
            user: view all the exercises
            {
@@ -273,6 +312,7 @@ def chat_call(question):
                    }
                ]
            }
+           
         ----
               user: show me all the exercises and exercises for chest
               {
@@ -288,6 +328,7 @@ def chat_call(question):
                       }
                   ]
               }
+              
         ---- 
             user: show me all the exercises and exercises for neck
             {
@@ -305,7 +346,7 @@ def chat_call(question):
             }         
                
          '''},
-            {"role": "user", "content": f"Question: {question}"},
+            {"role": "user", "content": f"user: {question}"},
         ],
         response_model=Call,
     )    
@@ -317,58 +358,17 @@ def chat_call(question):
 def chat(question, context):
     stream = client.chat.completions.create(
     model="gemma:2b",
-    temperature=0.6,
+    temperature=0.3,
     messages=[
         {"role": "system", "content": f'''
           You are a helpful assistant that works for SLEEPING GYM & FINTNESS CENTER, and you are restricted to talk only about exercises on the GYM. 
           You have user QUESTION and CONTEXT. You can use the CONTEXT to answer the QUESTION.
           You should provide a helpful answer to the user's QUESTION based on the CONTEXT.
+          You should describe the exercises in detail provide in CONTEXT.
           
           Text Formating Instructions:
            1. If your answer contain a list, it should numbered list.
            2. If the question contain multiple parts, you should answer all the parts and you shoud separate the answers with a line.
-             
-          Examples:
-          
-          ---
-          QUESTION: What are the exercises do you have
-          CONTEXT: context will contain all the exercises we provide
-          You should slightly describe all the exercises we provide.
-          
-          ---
-          QUESTION: would you please tell me about the exercises you have?
-          CONTEXT: context will contain all the exercises we provide
-          You should slightly describe all the exercises we provide.
-          
-          ---
-          QUESTION: What are the exercises for chest?
-          CONTEXT: context will contain all the exercises we provide for chest
-          You should slightly describe all the exercises we provide for chest.
-          
-          ----
-          QUESTION: What are the exercises for back?
-          Context: context will contain all the exercises we provide for back
-          You should slightly describe all the exercises we provide for back.
-          
-          ----
-          QUESTION: What are the exercises for Stomach?
-          CONTEXT: context will contain a sorry message.
-          You should say sorry, there is no exercise for the requested body part.  
-          
-          ----
-          Question: What are the exercises for lower legs, upper legs and cardio?
-          CONTEXT: context will contain all the exercises we provide for lower legs, upper legs and cardio
-          You should slightly describe all the exercises we provide for lower legs, upper legs and cardio separately.
-          
-          ----
-          QUESTION: What are the exercises for stomach and neck?
-          CONTEXT: context will contain all the exercises we provide for neck, and a sorry message for stomach.
-          You should slightly describe all the exercises we provide for neck and say sorry, there is no exercise for the requested body part.
-          
-          ----
-          QUESTION: What are the exercises do you have? and also show me the exercises for chest
-          CONTEXT: context will contain all the exercises we provide for all the body parts and specific exercises for chest
-          You should slightly describe all the exercises we provide for all the body parts and specific exercises for chest separately.
           
          '''},
         
