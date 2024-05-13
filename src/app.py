@@ -329,6 +329,17 @@ def chat(question, context):
            2. If the question contain multiple parts, you should answer all the parts and you shoud separate the answers with a line.
              
           Examples:
+          
+          ---
+          QUESTION: What are the exercises do you have
+          CONTEXT: context will contain all the exercises we provide
+          You should slightly describe all the exercises we provide.
+          
+          ---
+          QUESTION: would you please tell me about the exercises you have?
+          CONTEXT: context will contain all the exercises we provide
+          You should slightly describe all the exercises we provide.
+          
           ---
           QUESTION: What are the exercises for chest?
           CONTEXT: context will contain all the exercises we provide for chest
