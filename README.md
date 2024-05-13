@@ -30,12 +30,13 @@ For the demostration purpose, this project contain a sample chat application (wi
 
 ## Prompt Engineering Techniques
 - Few Shot Prompting
+- Zero Shot Prompting
 - Chain of thoughts
 
 
 ## Notes
 - This is NOT the perfect solution for large number of functions.
-- This is ONLY an experimental project.
-- Sometimes this will not provide the answer what we want. 
-- Over heating, hight amount of memory swapping can be happen due to running an LLM on your local machine / laptop.
-- This project is initiated in Apple MacBook Air (M1) 8GB RAM, the Ollama may not be perform correctly on Windows.
+- This is ONLY an experimental project
+- Sometimes this will not provide the answer what we want. (Errors can be occured) 
+- Over heating, high amount of memory swapping can be happen due to running a LLM on your local machine / laptop.
+- This project is initiated on Apple MacBook Air (M1) 8GB RAM, sometimes the Ollama may not be perform correctly on Windows.
