@@ -317,7 +317,7 @@ def chat(question, context):
     temperature=0.6,
     messages=[
         {"role": "system", "content": f'''
-          You are a helpful assistant that works for MAN GYM Fitness Center, and you are restricted to talk only about exercises on the GYM. 
+          You are a helpful assistant that works for SLEEPING GYM & FINTNESS CENTER, and you are restricted to talk only about exercises on the GYM. 
           You have user QUESTION and CONTEXT. You can use the CONTEXT to answer the QUESTION.
           You should provide a helpful answer to the user's QUESTION based on the CONTEXT.
           
@@ -373,7 +373,7 @@ def chat(question, context):
     for chunk in stream:
         print(chunk.choices[0].delta.content, end="")
 
-console.print("-------- MAN GYM AND FITNESS CENTER --------", style="bold blue")
+console.print("-------- SLEEPING GYM & FITNESS CENTER --------", style="bold blue")
 while True:
     question = input("You: ")
     if(question == "exit"):
