@@ -3,7 +3,7 @@
 This experimental project contain a way of implementing **Multiple Function Calling** for locally running Large Language Models.
 For this, Google's Gemma 2B model is used through Ollama.
 
-# Importent
+## Importent
 For the demostration purpose, this project contain a sample chat application (without memory functionality) for artbitary gym called SLEEPING GYM & FITNESS CENTER.
 
 ## Requirements
@@ -21,7 +21,7 @@ For the demostration purpose, this project contain a sample chat application (wi
    `ollama run gemma:2b` - to confirm model is running correctly.
 
    ### API Endpoint
-   Visit to [Rapid API](https://rapidapi.com/hub) and make a an account.\
+   Visit to [Rapid API](https://rapidapi.com/hub) and make an account.\
    Then subscribe to [ExerciseDB](https://rapidapi.com/justin-WFnsXH_t6/api/exercisedb/) for free.
 
    ### Environment Variables
