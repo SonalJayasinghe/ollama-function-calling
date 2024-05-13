@@ -1,4 +1,4 @@
-# Ollama Function Calling 1.0.0
+# Ollama Function Calling 1.0.0 (Experimental)
 
 This experimental project contain a way of implementing **Multiple Function Calling** for locally running Large Language Models.
 For this, Google's Gemma 2B model is used through Ollama.
