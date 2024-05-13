@@ -317,13 +317,53 @@ def chat(question, context):
     temperature=0.6,
     messages=[
         {"role": "system", "content": f'''
-          You are a gym trainer for MAN GYM Fitness Center, and you are restricted to talk only about exercises. You will provide the user QUESTION and CONTEXT from a secondary system that helps you to provide btter answers.
-          Your should provide a slightly descriptive answers in simple natural language based on CONTEXT and QUESTION.          
+          You are a helpful assistant that works for MAN GYM Fitness Center, and you are restricted to talk only about exercises on the GYM. 
+          You have user QUESTION and CONTEXT. You can use the CONTEXT to answer the QUESTION.
+          You should provide a helpful answer to the user's QUESTION based on the CONTEXT.
+          
+          Text Formating Instructions:
+           1. If your answer contain a list, it should numbered list.
+           2. If the question contain multiple parts, you should answer all the parts and you shoud separate the answers with a line.
+             
+          Examples:
+          ---
+          QUESTION: What are the exercises for chest?
+          CONTEXT: context will contain all the exercises we provide for chest
+          You should slightly describe all the exercises we provide for chest.
+          
+          ----
+          QUESTION: What are the exercises for back?
+          Context: context will contain all the exercises we provide for back
+          You should slightly describe all the exercises we provide for back.
+          
+          ----
+          QUESTION: What are the exercises for Stomach?
+          CONTEXT: context will contain a sorry message.
+          You should say sorry, there is no exercise for the requested body part.  
+          
+          ----
+          Question: What are the exercises for lower legs, upper legs and cardio?
+          CONTEXT: context will contain all the exercises we provide for lower legs, upper legs and cardio
+          You should slightly describe all the exercises we provide for lower legs, upper legs and cardio separately.
+          
+          ----
+          QUESTION: What are the exercises for stomach and neck?
+          CONTEXT: context will contain all the exercises we provide for neck, and a sorry message for stomach.
+          You should slightly describe all the exercises we provide for neck and say sorry, there is no exercise for the requested body part.
+          
+          ----
+          QUESTION: What are the exercises do you have? and also show me the exercises for chest
+          CONTEXT: context will contain all the exercises we provide for all the body parts and specific exercises for chest
+          You should slightly describe all the exercises we provide for all the body parts and specific exercises for chest separately.
+          
          '''},
-        {"role": "user", "content": f'''
-         QUESTION: {question}
-         CONTEXT: {context} 
-         '''},
+        
+        {
+            "role": "user",
+            "content": f'''        
+            QUESTION: {question}
+            CONTEXT: {context}  ''',
+        }
     ],
     stream=True,
 )
@@ -333,13 +373,11 @@ def chat(question, context):
     for chunk in stream:
         print(chunk.choices[0].delta.content, end="")
 
-
-
 console.print("-------- MAN GYM AND FITNESS CENTER --------", style="bold blue")
 while True:
     question = input("You: ")
     if(question == "exit"):
-        console.print("Assistant: Goodbye! See you at Gym :)", style="italic red")
+        console.print("Assistant: Goodbye! See you at Gym :)", style="bold green")
         break
     console.print("Thinking...", style="bold green")
     func_resp_dict  = chat_call(question)
@@ -348,7 +386,6 @@ while True:
     console.print("APIs are calling...", style="bold green")
     api_response = selector(func_resp_dict)
     api_response_nl = api_response_to_nl(api_response)
-    print(api_response)
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
     console.print("Thinking...", style="bold green")
