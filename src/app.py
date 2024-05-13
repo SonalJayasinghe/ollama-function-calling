@@ -8,8 +8,10 @@ from rich.console import Console
 import json
 from functions.functions import get_exercise_by_bodypart, get_exercise_list
 
-# Initialize the client
+#Initialize the console
 console = Console()
+
+# Initialize the client from OpenAI and Patch it with Instructor
 client = instructor.patch(
     OpenAI(
         base_url="http://localhost:11434/v1",
@@ -18,6 +20,7 @@ client = instructor.patch(
     mode=instructor.Mode.JSON,
 )
 
+#Select the function based on the move
 def selector(json_dict):
     api_response = []
     
@@ -30,6 +33,7 @@ def selector(json_dict):
             api_response.append([{ 'type': "No Moves", 'message': { "statusCode" : "400"}}])
     return api_response       
 
+#Convert the API response to natural language
 def api_response_to_nl(api_response):
     response_text = ""
     for response in api_response:
@@ -44,8 +48,7 @@ def api_response_to_nl(api_response):
         response_text += "------------------------------------\n"
     return response_text
 
-
-# Define the schema for the response
+# Define the JSON schema for the response
 class Functions (BaseModel):
     name: str = Field(..., description="Name of the function")
     parameters: List[str] = Field( description="List of parameters of the function")
@@ -54,7 +57,7 @@ class Call(BaseModel):
     thought: str = Field(..., description="Thought process behind the response")
     moves: List[Functions] = Field(None, description="List of functions used to get the response")
 
-# Make the request for function call
+# Convert the user question to JSON schema
 def chat_call(question):
     funct_resp = client.chat.completions.create(
         model="gemma:2b",
@@ -373,21 +376,32 @@ def chat(question, context):
     for chunk in stream:
         print(chunk.choices[0].delta.content, end="")
 
+
+#Star the chat!
 console.print("-------- SLEEPING GYM & FITNESS CENTER --------", style="bold blue")
+
 while True:
     question = input("You: ")
+    
+    # Exit the chat
     if(question == "exit"):
         console.print("Assistant: Goodbye! See you at Gym :)", style="bold green")
         break
+    
+    # Get the JSON schema for the question
     console.print("Thinking...", style="bold green")
     func_resp_dict  = chat_call(question)
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
+    
+    # Call the APIs
     console.print("APIs are calling...", style="bold green")
     api_response = selector(func_resp_dict)
     api_response_nl = api_response_to_nl(api_response)
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
     console.print("Thinking...", style="bold green")
+    
+    # Chat with the user
     chat(question, api_response_nl)
     print("\n")
