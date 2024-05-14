@@ -11,7 +11,7 @@ from functions.functions import get_exercise_by_bodypart, get_exercise_list
 #Initialize the console
 console = Console()
 
-# Initialize the client from OpenAI and Patch it with Instructor
+# Initialize the client from OpenAI
 client = instructor.patch(
     OpenAI(
         base_url="http://localhost:11434/v1",

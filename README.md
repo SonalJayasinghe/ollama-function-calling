@@ -31,7 +31,6 @@ For the demostration purpose, this project contain a sample chat application (wi
 ## Prompt Engineering Techniques
 - Few Shot Prompting
 - Zero Shot Prompting
-- Chain of thoughts
 
 ## Diagram of The Project
 ![alt Structure that i followed](https://od.lk/s/NV8xOTMxODk2NjRf/Screenshot%202024-05-13%20at%2023.05.43.png)
