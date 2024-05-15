@@ -1,10 +1,10 @@
 # Ollama Function Calling 1.0.0 (Experimental)
 
-This experimental project contain a way of implementing **Multiple Function Calling** for locally running Large Language Models.
+This experimental project contains a way of implementing **Multiple Function Calling** for locally running Large Language Models.
 For this, Google's Gemma 2B model is used through Ollama.
 
-## Importent
-For the demostration purpose, this project contain a sample chat application (without memory functionality) for artbitary gym called SLEEPING GYM & FITNESS CENTER.
+## Important
+For the demonstration purpose, this project contains a sample chat application (without memory functionality) for arbitrary gym called SLEEPING GYM & FITNESS CENTER.
 
 ## Requirements
 ### Packages
@@ -38,6 +38,6 @@ For the demostration purpose, this project contain a sample chat application (wi
 ## Notes
 - This is NOT the perfect solution for large number of functions.
 - This is ONLY an experimental project
-- Sometimes this will not provide the answer what we want. (Errors can be occured) 
-- Over heating, high amount of memory swapping can be happen due to running a LLM on your local machine / laptop.
+- Sometimes this will not provide the answer what we want. (Errors can be occurred) 
+- Overheating, high amount of memory swapping can be happened due to running a LLM on your local machine / laptop.
 - This project is initiated on Apple MacBook Air (M1) 8GB RAM, sometimes the Ollama may not be perform correctly on Windows.
