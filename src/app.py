@@ -21,8 +21,9 @@ client = instructor.from_openai(
     mode=instructor.Mode.JSON,
 )
 
-#Select the function based on the move
+# Select the function based on the move
 def selector(json_dict):
+    ''' Select the function based on the move from the JSON schema from the user question'''
     api_response = []
     
     for move in json_dict["moves"]:
@@ -36,8 +37,9 @@ def selector(json_dict):
                 api_response.append([{ 'type': f"No Moves for {move['parameters'][i]}", 'message': { "statusCode" : "400"}}])
     return api_response       
 
-#Convert the API response to natural language
+# Convert the API response to natural language
 def api_response_to_nl(api_response):
+    ''' Convert the API response to natural language'''
     response_text = ""
     for response in api_response:
         i = 1
@@ -48,7 +50,7 @@ def api_response_to_nl(api_response):
                 break
             response_text += f"{i}. Exercise Name: {item['name']}, Body Part: {item['bodyPart']}, Target Mucle: {item['target']}, Secondary Target Mucles: {item['secondaryMuscles']} \n"
             i += 1
-        response_text += "------------------------------------\n"
+        response_text += "\n\n"
     return response_text
 
 # Define the JSON schema for the response
@@ -62,6 +64,7 @@ class Call(BaseModel):
 
 # Convert the user question to JSON schema
 def chat_call(question):
+    ''' Convert the user question to JSON schema using Gemma 2B model'''
     funct_resp = client.chat.completions.create(
         model="gemma:2b",
         temperature=0.1,
@@ -363,6 +366,7 @@ def chat_call(question):
     
 # Defined function for regular chat
 def chat(question, context):
+    ''' Chat with the user using Gemma 2B model'''
     stream = client.chat.completions.create(
     model="gemma:2b",
     temperature=0.3,
@@ -396,7 +400,7 @@ def chat(question, context):
         Padding( print(chunk.choices[0].delta.content, end=""), pad=(2, 4))
 
 
-#Star the chat!
+#Start the chat!
 console.print("\n\n------------------ SLEEPING GYM & FITNESS CENTER ------------------", style="bold blue")
 
 while True:
@@ -410,7 +414,6 @@ while True:
     # Get the JSON schema for the question
     console.print("Thinking...", style="bold green")
     func_resp_dict  = chat_call(question)
-    #print(func_resp_dict)
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
     
@@ -420,8 +423,8 @@ while True:
     api_response_nl = api_response_to_nl(api_response)
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
-    console.print("Thinking...", style="bold green")
     
     # Chat with the user
+    console.print("Thinking...", style="bold green")
     chat(question, api_response_nl)
     print("\n")
