@@ -5,6 +5,7 @@ from typing import List
 from pydantic import BaseModel, Field
 from rich import print
 from rich.console import Console
+from rich.padding import Padding
 import json
 from functions.functions import get_exercise_by_bodypart, get_exercise_list
 
@@ -12,7 +13,7 @@ from functions.functions import get_exercise_by_bodypart, get_exercise_list
 console = Console()
 
 # Initialize the client from OpenAI
-client = instructor.patch(
+client = instructor.from_openai(
     OpenAI(
         base_url="http://localhost:11434/v1",
         api_key="gemma"
@@ -31,7 +32,8 @@ def selector(json_dict):
             for i in range(len(move['parameters'])):
              api_response.append([{ 'type': f"get exercise for {move['parameters'][i]}", 'message': get_exercise_by_bodypart(move['parameters'][i])}])
         else:
-            api_response.append([{ 'type': "No Moves", 'message': { "statusCode" : "400"}}])
+            for i in range(len(move['parameters'])):
+                api_response.append([{ 'type': f"No Moves for {move['parameters'][i]}", 'message': { "statusCode" : "400"}}])
     return api_response       
 
 #Convert the API response to natural language
@@ -262,7 +264,12 @@ def chat_call(question):
             user: what are the exercises for stomach
             {
                 "thought": "stomach is not in my BODY PARTS list. I should ask the user to ask about the body parts in the list",
-                "moves": [{"name": "No_Moves", "parameters": []}]
+                "moves": [
+                    {
+                        "name": "No_Moves",
+                        "parameters": ["stomach"]
+                    }
+                ]
             }  
             
         ----
@@ -380,16 +387,17 @@ def chat(question, context):
         }
     ],
     stream=True,
+    response_model=None
 )
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K") 
     print("\nAssistant: ", end="")
     for chunk in stream:
-        print(chunk.choices[0].delta.content, end="")
+        Padding( print(chunk.choices[0].delta.content, end=""), pad=(2, 4))
 
 
 #Star the chat!
-console.print("-------- SLEEPING GYM & FITNESS CENTER --------", style="bold blue")
+console.print("\n\n------------------ SLEEPING GYM & FITNESS CENTER ------------------", style="bold blue")
 
 while True:
     question = input("You: ")
@@ -402,6 +410,7 @@ while True:
     # Get the JSON schema for the question
     console.print("Thinking...", style="bold green")
     func_resp_dict  = chat_call(question)
+    #print(func_resp_dict)
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
     
