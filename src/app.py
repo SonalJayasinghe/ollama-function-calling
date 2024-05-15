@@ -5,14 +5,15 @@ from typing import List
 from pydantic import BaseModel, Field
 from rich import print
 from rich.console import Console
+from rich.padding import Padding
 import json
 from functions.functions import get_exercise_by_bodypart, get_exercise_list
 
 #Initialize the console
 console = Console()
 
-# Initialize the client from OpenAI and Patch it with Instructor
-client = instructor.patch(
+# Initialize the client from OpenAI
+client = instructor.from_openai(
     OpenAI(
         base_url="http://localhost:11434/v1",
         api_key="gemma"
@@ -20,8 +21,9 @@ client = instructor.patch(
     mode=instructor.Mode.JSON,
 )
 
-#Select the function based on the move
+# Select the function based on the move
 def selector(json_dict):
+    ''' Select the function based on the move from the JSON schema from the user question'''
     api_response = []
     
     for move in json_dict["moves"]:
@@ -31,11 +33,13 @@ def selector(json_dict):
             for i in range(len(move['parameters'])):
              api_response.append([{ 'type': f"get exercise for {move['parameters'][i]}", 'message': get_exercise_by_bodypart(move['parameters'][i])}])
         else:
-            api_response.append([{ 'type': "No Moves", 'message': { "statusCode" : "400"}}])
+            for i in range(len(move['parameters'])):
+                api_response.append([{ 'type': f"No Moves for {move['parameters'][i]}", 'message': { "statusCode" : "400"}}])
     return api_response       
 
-#Convert the API response to natural language
+# Convert the API response to natural language
 def api_response_to_nl(api_response):
+    ''' Convert the API response to natural language'''
     response_text = ""
     for response in api_response:
         i = 1
@@ -46,7 +50,7 @@ def api_response_to_nl(api_response):
                 break
             response_text += f"{i}. Exercise Name: {item['name']}, Body Part: {item['bodyPart']}, Target Mucle: {item['target']}, Secondary Target Mucles: {item['secondaryMuscles']} \n"
             i += 1
-        response_text += "------------------------------------\n"
+        response_text += "\n\n"
     return response_text
 
 # Define the JSON schema for the response
@@ -60,6 +64,7 @@ class Call(BaseModel):
 
 # Convert the user question to JSON schema
 def chat_call(question):
+    ''' Convert the user question to JSON schema using Gemma 2B model'''
     funct_resp = client.chat.completions.create(
         model="gemma:2b",
         temperature=0.1,
@@ -262,7 +267,12 @@ def chat_call(question):
             user: what are the exercises for stomach
             {
                 "thought": "stomach is not in my BODY PARTS list. I should ask the user to ask about the body parts in the list",
-                "moves": [{"name": "No_Moves", "parameters": []}]
+                "moves": [
+                    {
+                        "name": "No_Moves",
+                        "parameters": ["stomach"]
+                    }
+                ]
             }  
             
         ----
@@ -356,6 +366,7 @@ def chat_call(question):
     
 # Defined function for regular chat
 def chat(question, context):
+    ''' Chat with the user using Gemma 2B model'''
     stream = client.chat.completions.create(
     model="gemma:2b",
     temperature=0.3,
@@ -380,16 +391,17 @@ def chat(question, context):
         }
     ],
     stream=True,
+    response_model=None
 )
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K") 
     print("\nAssistant: ", end="")
     for chunk in stream:
-        print(chunk.choices[0].delta.content, end="")
+        Padding( print(chunk.choices[0].delta.content, end=""), pad=(2, 4))
 
 
-#Star the chat!
-console.print("-------- SLEEPING GYM & FITNESS CENTER --------", style="bold blue")
+#Start the chat!
+console.print("\n\n------------------ SLEEPING GYM & FITNESS CENTER ------------------", style="bold blue")
 
 while True:
     question = input("You: ")
@@ -411,8 +423,8 @@ while True:
     api_response_nl = api_response_to_nl(api_response)
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
-    console.print("Thinking...", style="bold green")
     
     # Chat with the user
+    console.print("Thinking...", style="bold green")
     chat(question, api_response_nl)
     print("\n")
